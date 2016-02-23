@@ -31,7 +31,11 @@ class DataService(object):
             result[app_id] = {'title' : title}
         return result
 
+    @classmethod
+    def update_user_info(cls, filter_dict, update):
+        cls.user_download_history.update_one(filter_dict, update, True)
 
     @classmethod
     def update_app_info(cls, filter_dict, update):
+        # True: if the field not exist, insert it
         cls.app_info.update_one(filter_dict, update, True)

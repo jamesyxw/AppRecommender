@@ -19,12 +19,35 @@ class Helper(object):
         return count
 
 
-def calculate_top_5(app, user_download_history):
+def calculate_user_top_5(user_id, user_download_history, all_download_history):
+    app_similarity = {}
+
+    for apps in all_download_history:
+        similarity = Helper.cosine_similarity(user_download_history, apps)
+        for other_app in apps:
+            if app_similarity.has_key(other_app):
+                app_similarity[other_app] += similarity
+            else:
+                app_similarity[other_app] = similarity
+
+    for app in user_download_history:
+        app_similarity.pop(app)
+
+
+    sorted_tups = sorted(app_similarity.items(), key=operator.itemgetter(1), reverse=True)
+    top_5_app = [sorted_tups[0][0], sorted_tups[1][0], sorted_tups[2][0], sorted_tups[3][0], sorted_tups[4][0]]
+    print("top_5_app for " + str(user_id) + ":\t" + str(top_5_app))
+
+    DataService.update_user_info({'user_id' : user_id}, {'$set' : {'top_5_app': top_5_app}})
+
+
+# all_download_history is the entire list of history {(downloaded app list)}
+def calculate_app_top_5(app, all_download_history):
     # create a dict to store each other app and its similarity to this app_list2
     app_similarity = {} # {app_id: similarity}
 
-    for apps in user_download_history:
-        # calculate the similarity
+    for apps in all_download_history:
+        # calculate the similarity of the app and the user download history
         similarity = Helper.cosine_similarity([app], apps)
         for other_app in apps:
             if app_similarity.has_key(other_app):
@@ -41,6 +64,6 @@ def calculate_top_5(app, user_download_history):
     #sort by similarity
     sorted_tups = sorted(app_similarity.items(), key=operator.itemgetter(1), reverse=True)
     top_5_app = [sorted_tups[0][0], sorted_tups[1][0], sorted_tups[2][0], sorted_tups[3][0], sorted_tups[4][0]]
-    print("top_5_app for " + str(app) + ":\t" + str(top_5_app))
+    # print("top_5_app for " + str(app) + ":\t" + str(top_5_app))
 
     DataService.update_app_info({'app_id' : app}, {'$set' : {'top_5_app': top_5_app}})
